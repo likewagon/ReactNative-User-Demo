@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "967043145503",
+    "project_id": "userdemo-d04df",
+    "storage_bucket": "userdemo-d04df.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967043145503:android:f9d022260126ce84ef9a2a",
+        "android_client_info": {
+          "package_name": "com.faisal.userdemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "967043145503-kqm8lpmk8e1oqjgk05dorgjit5natj4a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.faisal.userdemo",
+            "certificate_hash": "4b4ef1a7de1af49b917185047c43d1962506bde4"
+          }
+        },
+        {
+          "client_id": "967043145503-994041s4p5h067epsdebuu3mjok0env6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDyikUUcwaFTerVw6A0od3l1rrG2T_fh5o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "967043145503-994041s4p5h067epsdebuu3mjok0env6.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "967043145503-r394ae40m43ae0apfsgqmc1q4g9h901q.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.faisal.userdemo"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
