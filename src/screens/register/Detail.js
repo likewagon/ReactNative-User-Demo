@@ -126,8 +126,14 @@ export default function Detail({ navigation }) {
     if (photoLocalPath) {
       await uploadPhoto()
         .then(() => {
+          Constants.user.name = name;
           Constants.user.photo = photoDownloadUrl;
-          navigation.navigate('Address');
+          Constants.user.profileStep = 2;
+          setData('users', 'update', Constants.user)
+            .then(() => {
+              navigation.navigate('Address');
+            })
+            .catch(err => console.log('update user error', err))
         })
         .catch((err) => {
           console.log('upload photo error', err);
@@ -135,8 +141,13 @@ export default function Detail({ navigation }) {
         })
     }
     else {
-      Alert.alert('Photo path empty.');
-      return;
+      Constants.user.name = name;
+      Constants.user.profileStep = 2;
+      setData('users', 'update', Constants.user)
+        .then(() => {
+          navigation.navigate('Address');
+        })
+        .catch(err => console.log('update user error', err))
     }
   }
 
@@ -208,10 +219,10 @@ export default function Detail({ navigation }) {
         </View>
 
         <View style={[styles.genderRow, ageDropShow ? { marginTop: normalize(120, 'height') } : null]}>
-          <TouchableOpacity style={[styles.btn, { backgroundColor: 'transparent', borderRadius: normalize(10), borderWidth: normalize(3) }, gender === 'Male' ? { borderColor: Colors.red } : {}]} onPress={() => setGender('Male')}>
+          <TouchableOpacity style={[styles.btn, { backgroundColor: 'transparent', borderRadius: normalize(10), borderWidth: normalize(3) }, gender === 'Male' ? { borderColor: Colors.red } : { borderColor: Colors.grey }]} onPress={() => setGender('Male')}>
             <Text style={styles.btnTxt}>Male</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.btn, { backgroundColor: 'transparent', borderRadius: normalize(10), borderWidth: normalize(3) }, gender === 'Female' ? { borderColor: Colors.red } : {}]} onPress={() => setGender('Female')}>
+          <TouchableOpacity style={[styles.btn, { backgroundColor: 'transparent', borderRadius: normalize(10), borderWidth: normalize(3) }, gender === 'Female' ? { borderColor: Colors.red } : { borderColor: Colors.grey }]} onPress={() => setGender('Female')}>
             <Text style={styles.btnTxt}>Female</Text>
           </TouchableOpacity>
         </View>
@@ -388,7 +399,8 @@ const styles = StyleSheet.create({
     width: normalize(90),
     height: normalize(90),
     borderRadius: normalize(45),
-    borderWidth: normalize(3)
+    borderWidth: normalize(3),
+    borderColor: Colors.grey
   },
   photoImg: {
     width: '100%',

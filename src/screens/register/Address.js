@@ -86,20 +86,25 @@ export default function Address({ navigation }) {
 
         <View style={styles.mapBox}>
           {
-            Constants.location.latitude && Constants.location.longitude &&
-            <MapView
-              initialRegion={{
-                latitude: Constants.location.latitude,
-                longitude: Constants.location.longitude,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-              }}
-              showsUserLocation={true}
-              showsCompass={true}
-              showsPointsOfInterest={false}
-              zoomControlEnabled={true}
-              style={{ flex: 1 }}
-            />
+            () => {
+              if(Constants.location.latitude && Constants.location.longitude) {
+                return (
+                  <MapView
+                    initialRegion={{
+                      latitude: Constants.location.latitude,
+                      longitude: Constants.location.longitude,
+                      latitudeDelta: 0.0922,
+                      longitudeDelta: 0.0421,
+                    }}
+                    showsUserLocation={true}
+                    showsCompass={true}
+                    showsPointsOfInterest={false}
+                    zoomControlEnabled={true}
+                    style={{ flex: 1 }}
+                  />
+                )
+              }
+             }
           }
         </View>
 
@@ -156,7 +161,7 @@ export default function Address({ navigation }) {
               color: Colors.grey,
               textAlign: 'center'
             }}
-            containerStyle={{ width: '100%', height: normalize(45, 'height'), borderWidth: normalize(3) }}
+            containerStyle={{ width: '100%', height: normalize(45, 'height') }}
             style={{ backgroundColor: 'transparent' }}
             itemStyle={{ justifyContent: 'center' }}
             dropDownStyle={{ backgroundColor: 'transparent' }}

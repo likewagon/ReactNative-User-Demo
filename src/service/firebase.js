@@ -122,13 +122,13 @@ export const setData = (kind = '', act, item) => {
           reject(err);
         })
     }
-    else if (act == 'update') {
+    else if (act == 'update') {      
       firebase.firestore()
         .collection(kind)
         .doc(item.id)
         .update(item)
         .then(() => {
-          resolve();
+          resolve();          
         })
         .catch(err => {
           reject(err);
