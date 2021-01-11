@@ -22,11 +22,10 @@ EntypoIcon.loadFont();
 import Spinner from 'react-native-loading-spinner-overlay';
 import AsyncStorage from '@react-native-community/async-storage';
 import DropDownPicker from 'react-native-dropdown-picker';
-import ImagePicker from 'react-native-image-picker';
-import ImageResizer from 'react-native-image-resizer';
+import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
 import { Colors, Images, Constants } from '@constants';
-import { signup, createUser, setData, checkInternet } from '../../service/firebase';
+import { signup, createUser, setData, checkInternet, uploadMedia } from '../../service/firebase';
 
 export default function Detail({ navigation }) {
   const [spinner, setSpinner] = useState(false);
@@ -37,10 +36,7 @@ export default function Detail({ navigation }) {
   const [height, setHeight] = useState();
   const [weight, setWeight] = useState();
   const [photo, setPhoto] = useState();
-
-  const [photoLocalPath, setPhotoLocalPath] = useState();
-  const [photoDownloadUrl, setPhotoDownloadUrl] = useState();
-
+  
   const [ages, setAges] = useState([]);
   const [heights, setHeights] = useState([]);
   const [weights, setWeights] = useState([]);
@@ -73,41 +69,30 @@ export default function Detail({ navigation }) {
 
   onPhotoLoad = () => {
     var options = {
-      title: 'Select Image',
-      storageOptions: {
-        skipBackup: true,
-        path: 'images',
-      },
-    };
-    console.log(ImagePicker)
-    // ImagePicker.showImagePicker(options, response => {
-    //   if (response.didCancel) {
-    //   } else if (response.error) {
-    //   } else if (response.customButton) {
-    //   } else {
-    //     setPhotoLocalPath(response.uri);
-    //     setPhoto(response.uri)
-    //   }
-    // });
+      mediaType: 'photo',
+      maxWidth: normalize(90),
+      maxHeight: normalize(90)
+    }
+
+    launchImageLibrary(options, response => {
+      if (response.didCancel) {
+      } else if (response.errorMessage) {
+        Alert.alert('Loading Photo Failed.');
+      } else {        
+        setPhoto(response.uri)
+      }
+    })
   };
 
   uploadPhoto = () => {
     return new Promise(async (resolve, reject) => {
-      var platformPhotoLocalPath = Platform.OS === "android" ? photoLocalPath : photoLocalPath.replace("file://", "")
-      let newPath = '';
-      await ImageResizer.createResizedImage(platformPhotoLocalPath, 90, 90, 'PNG', 50, 0, null)
-        .then(response => {
-          newPath = response.uri;
-        })
-        .catch(err => {
-          console.log('image resizer error', err);
-        });
+      var platformPhotoLocalPath = Platform.OS === "android" ? photo : photo.replace("file://", "")
 
-      await uploadMedia('photos', Constants.user?.id, newPath)
+      await uploadMedia('photos', Constants.user?.id, platformPhotoLocalPath)
         .then((downloadURL) => {
           if (!downloadURL) return;
           // console.log('downloadURL', downloadURL)
-          setPhotoDownloadUrl(downloadURL);
+          Constants.user.photo = downloadURL;
           resolve();
         })
         .catch((err) => {
@@ -123,32 +108,52 @@ export default function Detail({ navigation }) {
       return;
     }
 
-    if (photoLocalPath) {
+    setSpinner(true);
+    if (photo) {
       await uploadPhoto()
         .then(() => {
-          Constants.user.name = name;
-          Constants.user.photo = photoDownloadUrl;
-          Constants.user.profileStep = 2;
-          setData('users', 'update', Constants.user)
-            .then(() => {
-              navigation.navigate('Address');
-            })
-            .catch(err => console.log('update user error', err))
+          updateUser();
         })
         .catch((err) => {
           console.log('upload photo error', err);
-          setSpinner(false);
+          Alert.alert(
+            'Upload photo failed.',
+            '',
+            [
+              { text: "OK", onPress: () => setSpinner(false) }
+            ],
+          );
         })
     }
     else {
-      Constants.user.name = name;
-      Constants.user.profileStep = 2;
-      setData('users', 'update', Constants.user)
-        .then(() => {
-          navigation.navigate('Address');
-        })
-        .catch(err => console.log('update user error', err))
+      updateUser();
     }
+  }
+
+  function updateUser() {
+    Constants.user.name = name;
+    if (age) Constants.user.age = age;
+    if (gender) Constants.user.gender = gender;
+    if (height) Constants.user.height = height;
+    if (weight) Constants.user.weight = weight;    
+    Constants.user.profileStep = 2;
+
+    setData('users', 'update', Constants.user)
+      .then(() => {
+        setSpinner(false);
+        AsyncStorage.setItem('userdemouser', JSON.stringify(Constants.user));
+        navigation.navigate('Address');
+      })
+      .catch(err => {
+        console.log('update user error', err);
+        Alert.alert(
+          'Update user failed.',
+          '',
+          [
+            { text: "OK", onPress: () => setSpinner(false) }
+          ],
+        );
+      })
   }
 
   return (
@@ -404,7 +409,8 @@ const styles = StyleSheet.create({
   },
   photoImg: {
     width: '100%',
-    height: '100%'
+    height: '100%',
+    borderRadius: normalize(45)
   },
   photoBtn: {
     width: '100%',

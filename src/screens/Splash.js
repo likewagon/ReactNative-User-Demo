@@ -174,7 +174,8 @@ export default function Splash({ navigation }) {
           else if (Constants.user.profileStep == 2) navigation.navigate('Register', { screen: 'Address' });
           else if (Constants.user.profileStep == 3) navigation.navigate('Register', { screen: 'Preferences' });
           else if (Constants.user.profileStep == 4) navigation.navigate('Register', { screen: 'Pictures' });
-          else if (Constants.user.profileStep == 5) navigation.navigate('Home');
+          else if (Constants.user.profileStep == 5) navigation.navigate('Main', {screen: 'Home'});
+          // else if (Constants.user.profileStep == 5) navigation.navigate('Register', {screen: 'Pictures'});
         }
         else {
           setSpinner(false);
@@ -184,13 +185,13 @@ export default function Splash({ navigation }) {
   }
 
   return (
-    <ImageBackground style={styles.container} /*source={Images.background}*/>
+    <View style={styles.container}>
       <Spinner
         visible={spinner}
         textContent={''}
       />
       <Text style={styles.title}>User Demo</Text>
-    </ImageBackground>
+    </View>
   );
 }
 
@@ -199,7 +200,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center'    
   },
   title: {
     fontSize: RFPercentage(3),

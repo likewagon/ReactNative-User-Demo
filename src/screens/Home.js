@@ -36,29 +36,31 @@ export default function Home({ navigation }) {
 
   const [users, setUsers] = useState(Constants.users);
 
-  function onMenu(value){
-    if(value === 'home') { 
+  function onMenu(value) {
+    if (value === 'home') {
       navigation.navigate('Home');
     }
-    else if(value === 'addChild'){
-      navigation.navigate('Register', {pid: Constants.user?.id})
+    else if (value === 'addChild') {
+      navigation.navigate('Register', { pid: Constants.user?.id })
     }
-    else if(value === 'editChild'){
+    else if (value === 'editChild') {
 
     }
-    else if(value === 'terms'){
+    else if (value === 'terms') {
 
     }
   }
 
   function renderUser(item) {
-    console.log('user', item)
+    // console.log('user', item)
     return (
-      <View style={styles.userRow}>
+      <View key={item.id} style={styles.userRow}>
         <View style={styles.photoBox}>
           <Image style={styles.photoImg} source={{ uri: item.photo }} resizeMode='stretch' />
         </View>
-        <View style={styles.txtBox}></View>
+        <View style={styles.txtBox}>
+          <Text style={styles.itemTxt}>{item.name}, {item.age}yrs, {item.weight}kg</Text>
+        </View>
       </View>
     )
   }
@@ -77,7 +79,7 @@ export default function Home({ navigation }) {
             <MenuTrigger onPress={() => setToggleMenu(!toggleMenu)}>
               <EntypoIcon name="menu" style={styles.headerIcon}></EntypoIcon>
             </MenuTrigger>
-            <MenuOptions>
+            <MenuOptions customStyles={{ optionText: { fontSize: RFPercentage(2.2), paddingLeft: normalize(5) } }}>
               <MenuOption value='home' text='Home' />
               <MenuOption value='addChild' text='Add Child' />
               <MenuOption value='editChild' text='Edit Child' />
@@ -104,6 +106,7 @@ export default function Home({ navigation }) {
           users.length == 0 &&
           <Text style={[styles.sideTxt, { marginTop: normalize(250, 'height') }]}>No Users</Text>
         }
+        <View style={{width: '100%'}}></View>
       </ScrollView>
     </KeyboardAvoidingView>
 
@@ -113,7 +116,7 @@ export default function Home({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: '100%'
+    height: '100%'    
   },
   header: {
     width: '100%',
@@ -147,13 +150,15 @@ const styles = StyleSheet.create({
   },
 
   body: {
-    flex: 1,
+    flex: 1,    
   },
 
   userRow: {
-    width: '80%',
+    width: '90%',
     height: normalize(80, 'height'),
-    flexDirection: 'row'
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   photoBox: {
     width: '30%',
@@ -166,11 +171,22 @@ const styles = StyleSheet.create({
     height: normalize(90),
     borderRadius: normalize(45),
     borderWidth: normalize(3),
+    borderColor: Colors.grey
   },
 
   txtBox: {
-    width: '70%',
-    height: '100%',
-    borderWidth: normalize(3)
+    width: '65%',
+    height: '80%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: normalize(3),
+    borderColor: Colors.grey,
+    paddingLeft: normalize(5)
+  },
+  itemTxt: {
+    width: '100%',
+    fontSize: RFPercentage(2.2),
+    fontWeight: '600',
+    color: Colors.black,
   },
 });

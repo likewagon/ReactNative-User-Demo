@@ -29,8 +29,8 @@ import { signup, createUser, setData, checkInternet } from '../../service/fireba
 export default function Preferences({ navigation }) {
   const [spinner, setSpinner] = useState(false);
 
-  const [selectedFoods, setSelectedFoods] = useState([]);
-  const [selectedLandscapes, setSelectedLandscapes] = useState([]);
+  const [selectedFoods, setSelectedFoods] = useState(Constants.user.foods);
+  const [selectedLandscapes, setSelectedLandscapes] = useState(Constants.user.landscapes);
   const [preference, setPreference] = useState();
   const [medication, setMedication] = useState();
   const [allergy, setAllergy] = useState();
@@ -41,8 +41,8 @@ export default function Preferences({ navigation }) {
 
   function onFoodItem(item){
     if(selectedFoods.includes(item.id)){
-      var sFoods = [...selectedFoods];
-      sFoods.splice(sFoods.findIndex(each=>each.id == item.id), 1);
+      var sFoods = [...selectedFoods];      
+      sFoods.splice(sFoods.findIndex(each=>each == item.id), 1);
     }
     else{
       var sFoods = [...selectedFoods];
@@ -54,7 +54,7 @@ export default function Preferences({ navigation }) {
   function onLandscapeItem(item){
     if(selectedLandscapes.includes(item.id)){
       var sLandscapes = [...selectedLandscapes];
-      sLandscapes.splice(sLandscapes.findIndex(each=>each.id == item.id), 1);
+      sLandscapes.splice(sLandscapes.findIndex(each=>each == item.id), 1);
     }
     else{
       var sLandscapes = [...selectedLandscapes];
@@ -64,7 +64,56 @@ export default function Preferences({ navigation }) {
   }
 
   function onNext(){
-    navigation.navigate('Pictures');
+    setSpinner(true);
+
+    if(selectedFoods.length == 0){
+      Alert.alert(
+        'Please select any food at least 1',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+      return;
+    }
+
+    if(selectedLandscapes.length == 0){
+      Alert.alert(
+        'Please select any landscape at least 1',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+      return;
+    }
+
+    var nUser = {...Constants.user}    
+    nUser.foods = selectedFoods;
+    nUser.landscapes = selectedLandscapes;
+    if(preference) nUser.preference = preference;
+    if(medication) nUser.medication = medication;
+    if(allergy) nUser.allergy = allergy;
+    if(otherinfo) nUser.otherinfo = otherinfo;    
+    nUser.profileStep = 4;
+
+    setData('users', 'update', nUser)
+    .then(()=>{
+      Constants.user = nUser;
+      AsyncStorage.setItem('userdemouser', JSON.stringify(Constants.user));      
+      setSpinner(false);
+      navigation.navigate('Pictures');
+    })
+    .catch(err => {
+      console.log('update data error', err);
+      Alert.alert(
+        'Update data failed.',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+    })
   }
 
   return (
@@ -76,7 +125,7 @@ export default function Preferences({ navigation }) {
       />
       <View style={styles.header}>
         <View style={styles.sideContainer}>
-          <TouchableOpacity onPress={() => { navigation.goBack() }}>
+          <TouchableOpacity onPress={() => { navigation.navigate('Address') }}>
             <Text style={styles.sideTxt}>Back</Text>
           </TouchableOpacity>
         </View>
@@ -215,7 +264,8 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
     // marginTop: normalize(20, 'height'),
-    borderWidth: normalize(3)
+    borderWidth: normalize(3),
+    borderColor: Colors.grey
   },
   tipTxt: {
     fontSize: RFPercentage(2.5),
@@ -260,7 +310,8 @@ const styles = StyleSheet.create({
     width: '80%',
     alignItems: 'center',
     marginTop: normalize(20, 'height'),
-    borderWidth: normalize(3)
+    borderWidth: normalize(3),
+    borderColor: Colors.grey
   },
 
   btnRow: {

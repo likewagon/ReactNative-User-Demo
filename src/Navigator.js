@@ -48,14 +48,31 @@ function RegisterStack() {
   )
 }
 
+function MainStack() {
+  return (
+    <Stack.Navigator
+      headerMode='none'
+      initialRouteName='Home'
+    >
+      <Stack.Screen
+        name='Home'
+        component={Home}
+      />      
+      <Stack.Screen
+        name='Profile'
+        component={Profile}
+      />      
+    </Stack.Navigator>
+  )
+}
+
 function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator headerMode='none' initialRouteName="Splash" screenOptions={{ cardStyle: {backgroundColor: Colors.blackColor }}}>
         <Stack.Screen name='Splash' component={Splash} />
         <Stack.Screen name='Register' component={RegisterStack} />
-        <Stack.Screen name='Home' component={Home} />
-        <Stack.Screen name='Profile' component={Profile} />
+        <Stack.Screen name='Main' component={MainStack} />        
       </Stack.Navigator>
     </NavigationContainer>
   )

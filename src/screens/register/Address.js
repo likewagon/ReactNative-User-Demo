@@ -32,30 +32,110 @@ export default function Address({ navigation }) {
   const [spinner, setSpinner] = useState(false);
 
   const [addressKind, setAddressKind] = useState('home');
-  const [activeAddress, setActiveAddress] = useState({});
-  const [address, setAddress] = useState({
-    home: {},
-    work: {},
-    other: {}
-  })
+  const [addressValues, setAddressValues] = useState({});
+    
   const [countries, setCountries] = useState([]);
-  const [country, setCountry] = useState();
+  const [countryDropShow, setCountryDropShow] = useState(false);
+
+  const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
     let countryNamesWithCodes = RNCountry.getCountryNamesWithCodes;
     countryNamesWithCodes.sort((a, b) => a.name.localeCompare(b.name));
     var tCountries = countryNamesWithCodes.map((each, index) => ({
       label: each.name,
-      value: each.code
+      value: each.name
     }))
     setCountries(tCountries)
   }, []);
 
-  function onSave(){
+  useEffect(()=>{
+    var tAddressValues = {
+      address1: Constants.user.address[addressKind]?.address1,
+      address2: Constants.user.address[addressKind]?.address2,
+      city: Constants.user.address[addressKind]?.city,
+      country: Constants.user.address[addressKind]?.country,
+    }
+    setAddressValues(tAddressValues);
+  }, [addressKind])
 
+  function onSave(){
+    if(!addressValues.address1){
+      Alert.alert(
+        'Please enter address1',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+      return;
+    }
+    if(!addressValues.city){
+      Alert.alert(
+        'Please enter city',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+      return;
+    }
+    if(!addressValues.country){
+      Alert.alert(
+        'Please select country',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+      return;
+    }
+
+    setSpinner(true);
+
+    var addressItem = {
+      address1: addressValues.address1,
+      address2: addressValues.address2,
+      city: addressValues.city,
+      country: addressValues.country
+    }
+
+    var nUser = {...Constants.user}
+    nUser.address[addressKind] = addressItem;
+    nUser.profileStep = 3;
+
+    setData('users', 'update', nUser)
+    .then(()=>{
+      Constants.user = nUser;
+      AsyncStorage.setItem('userdemouser', JSON.stringify(Constants.user));
+      setRefresh(!refresh);
+      setSpinner(false);
+    })
+    .catch(err => {
+      console.log('update data error', err);
+      Alert.alert(
+        'Update data failed.',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+    })
+        
   }
 
   function onNext(){
+    if(!Constants.user.address.home && !Constants.user.address.work && !Constants.user.address.other){
+      Alert.alert(
+        'Please enter any address at least 1',
+        '',
+        [
+          { text: "OK", onPress: () => setSpinner(false) }
+        ],
+      );
+      return;
+    }   
+
     navigation.navigate('Preferences');
   }
 
@@ -68,12 +148,12 @@ export default function Address({ navigation }) {
       />
       <View style={styles.header}>
         <View style={styles.sideContainer}>
-          <TouchableOpacity onPress={() => { navigation.goBack() }}>
+          <TouchableOpacity onPress={() => { navigation.navigate('Detail') }}>
             <Text style={styles.sideTxt}>Back</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.titleContainer}>
-          <Text style={styles.titleTxt}>Save your address</Text>
+          <Text style={styles.titleTxt}>Address</Text>
         </View>
         <View style={styles.sideContainer}>
           <TouchableOpacity onPress={() => { }}>
@@ -82,7 +162,7 @@ export default function Address({ navigation }) {
         </View>
       </View>
 
-      <View style={styles.body}>
+      <ScrollView style={styles.body} contentContainerStyle={{ justifyContent: 'center', alignItems: 'center' }}>
 
         <View style={styles.mapBox}>
           {
@@ -109,13 +189,13 @@ export default function Address({ navigation }) {
         </View>
 
         <View style={styles.addressBtnRow}>
-          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'home' ? {borderColor: Colors.red}:null]} onPress={() => {setAddressKind('home')}}>
+          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'home' ? {borderColor: Colors.red}:null, Constants.user.address.home ? {backgroundColor: Colors.yellow}:null]} onPress={() => {setAddressKind('home')}}>
             <Text style={styles.addressBtnTxt}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'work' ? {borderColor: Colors.red}:null]} onPress={() => {setAddressKind('work')}}>
+          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'work' ? {borderColor: Colors.red}:null, Constants.user.address.work ? {backgroundColor: Colors.yellow}:null]} onPress={() => {setAddressKind('work')}}>
             <Text style={styles.addressBtnTxt}>Work</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'other' ? {borderColor: Colors.red}:null]} onPress={() => {setAddressKind('other')}}>
+          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'other' ? {borderColor: Colors.red}:null, Constants.user.address.other ? {backgroundColor: Colors.yellow}:null]} onPress={() => {setAddressKind('other')}}>
             <Text style={styles.addressBtnTxt}>Other</Text>
           </TouchableOpacity>
         </View>
@@ -124,8 +204,8 @@ export default function Address({ navigation }) {
           style={styles.inputBox}
           placeholder={'Please enter address1  *'}
           placeholderTextColor={Colors.grey}
-          value={activeAddress.address1}
-          onChangeText={(text) => { activeAddress.address1 = text }}
+          value={addressValues.address1}
+          onChangeText={(text) => { var tAddressValues = {...addressValues, address1: text}; setAddressValues(tAddressValues) }}
         >
         </TextInput>
 
@@ -133,8 +213,8 @@ export default function Address({ navigation }) {
           style={styles.inputBox}
           placeholder={'Please enter address2'}
           placeholderTextColor={Colors.grey}
-          value={activeAddress.address2}
-          onChangeText={(text) => { activeAddress.address2 = text }}
+          value={addressValues.address2}
+          onChangeText={(text) => { var tAddressValues = {...addressValues, address2: text}; setAddressValues(tAddressValues) }}
         >
         </TextInput>
 
@@ -142,15 +222,15 @@ export default function Address({ navigation }) {
           style={styles.inputBox}
           placeholder={'Please enter city  *'}
           placeholderTextColor={Colors.grey}
-          value={activeAddress.city}
-          onChangeText={(text) => { activeAddress.city = text }}
+          value={addressValues.city}
+          onChangeText={(text) => { var tAddressValues = {...addressValues, city: text}; setAddressValues(tAddressValues) }}
         >
         </TextInput>
 
         <View style={{ width: '80%', marginTop: normalize(20, 'height') }}>
           <DropDownPicker
             items={countries}
-            defaultValue={country}
+            defaultValue={addressValues.country ? addressValues.country : null}
             placeholder='Please enter country'
             placeholderStyle={{
               fontSize: RFPercentage(2.4),
@@ -162,14 +242,17 @@ export default function Address({ navigation }) {
               textAlign: 'center'
             }}
             containerStyle={{ width: '100%', height: normalize(45, 'height') }}
-            style={{ backgroundColor: 'transparent' }}
-            itemStyle={{ justifyContent: 'center' }}
+            style={{ backgroundColor: 'transparent' }}            
             dropDownStyle={{ backgroundColor: 'transparent' }}
-            onChangeItem={item => setCountry(item.value)}
+            onChangeItem={(item) => { var tAddressValues = {...addressValues, country: item.value}; setAddressValues(tAddressValues) }}
+            showArrow={false}
+            dropDownMaxHeight={normalize(120, 'height')}
+            onOpen={() => setCountryDropShow(true)}
+            onClose={() => setCountryDropShow(false)}
           />
         </View>
 
-        <View style={styles.btnRow}>
+        <View style={[styles.btnRow, countryDropShow ? {marginTop: normalize(140, 'height')}: null]}>
           <TouchableOpacity style={styles.btn} onPress={() => onSave()}>
             <Text style={styles.btnTxt}>Save</Text>
           </TouchableOpacity>
@@ -177,7 +260,7 @@ export default function Address({ navigation }) {
             <Text style={styles.btnTxt}>Next {'>>'}</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -220,13 +303,13 @@ const styles = StyleSheet.create({
 
   body: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
+    // justifyContent: 'center',
+    // alignItems: 'center'
   },
 
   mapBox: {
     width: '90%',
-    height: '30%'
+    height: normalize(150, 'height')
   },
 
   addressBtnRow: {
@@ -240,6 +323,7 @@ const styles = StyleSheet.create({
     height: normalize(60),
     borderRadius: normalize(30),
     borderWidth: normalize(3),
+    borderColor: Colors.grey,
     justifyContent: 'center',
     alignItems: 'center'
   },
@@ -257,7 +341,9 @@ const styles = StyleSheet.create({
   btnRow: {
     width: '80%',
     flexDirection: 'row',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    marginTop: normalize(20, 'height'),
+    marginBottom: normalize(20, 'height')
   },
   btn: {
     width: '30%',
@@ -266,7 +352,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     alignSelf: 'flex-end',
-    marginTop: normalize(20, 'height')
+    // marginTop: normalize(20, 'height')
   },
   btnTxt: {
     fontSize: RFPercentage(2.2),
