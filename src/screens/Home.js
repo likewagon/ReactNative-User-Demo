@@ -12,13 +12,16 @@ import {
   TextInput,
   ImageBackground,
   Alert,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  FlatList
 } from 'react-native';
 import normalize from 'react-native-normalize';
 import { RFPercentage } from 'react-native-responsive-fontsize';
 
 import EntypoIcon from 'react-native-vector-icons/Entypo';
+import FontAwesomeIcon from 'react-native-vector-icons/FontAwesome';
 EntypoIcon.loadFont();
+FontAwesomeIcon.loadFont();
 import Spinner from 'react-native-loading-spinner-overlay';
 import AsyncStorage from '@react-native-community/async-storage';
 import Modal from 'react-native-modal';
@@ -33,35 +36,99 @@ export default function Home({ navigation }) {
   const [spinner, setSpinner] = useState(false);
 
   const [toggleMenu, setToggleMenu] = useState(false);
+  const [toggleProfile, setToggleProfile] = useState(false);
+  const [toggleProfileModal, setToggleProfileModal] = useState(false);
+  const [toggleChildModal, setToggleChildModal] = useState(false);
 
   const [users, setUsers] = useState(Constants.users);
+  const [user, setUser] = useState(); //for popup user
+  const [childs, setChilds] = useState([]);
+
+  useEffect(() => {
+    var childs = Constants.childs.filter(each => each.pid == Constants.user.id);
+    setChilds(childs);
+  }, [])
 
   function onMenu(value) {
     if (value === 'home') {
       navigation.navigate('Home');
     }
     else if (value === 'addChild') {
-      navigation.navigate('Register', { pid: Constants.user?.id })
+      var child = {
+        name: '',
+        phone: Constants.user.phone,
+        age: '',
+        gender: '',
+        height: '',
+        weight: '',
+        photo: '',
+        address: {
+          home: Constants.user.address.home,
+          work: Constants.user.address.work,
+          other: Constants.user.address.other
+        },
+        foods: [],
+        landscapes: [],
+        preference: '',
+        medication: '',
+        allergy: '',
+        otherinfo: '',
+        pid: Constants.user.id
+      }
+
+      setSpinner(true);
+      setData('childs', 'add', child)
+        .then((res) => {
+          setSpinner(false);          
+          Constants.child = res;
+          Constants.processType = 'child';
+          navigation.navigate('Register', { screen: 'Detail' });
+        })
+        .catch(err => {
+          console.log('add child error', err);
+        })
     }
     else if (value === 'editChild') {
-
+      setToggleChildModal(true);
     }
     else if (value === 'terms') {
 
     }
   }
 
+  function onProfile(value) {
+    if (value == 'view') {
+      setUser(Constants.user);
+      setToggleProfileModal(true);
+    }
+    else if (value == 'edit') {
+      navigation.navigate('Register', { screen: 'Detail' })
+    }
+  }
+
+  function onUser(user) {
+    setUser(user);
+    setToggleProfileModal(true)
+  }
+
+  function onEditChild(child) {
+    Constants.processType = 'child';
+    Constants.child = child;
+    navigation.navigate('Register', { screen: 'Detail' });
+  }
+
   function renderUser(item) {
-    // console.log('user', item)
     return (
-      <View key={item.id} style={styles.userRow}>
-        <View style={styles.photoBox}>
-          <Image style={styles.photoImg} source={{ uri: item.photo }} resizeMode='stretch' />
+      <TouchableOpacity key={item.id} style={styles.userRow} onPress={() => onUser(item)}>
+        <View style={styles.photoPart}>
+          <View style={styles.photoBox}>
+            <Image style={styles.photoImg} source={{ uri: item.photo }} resizeMode='cover' />
+          </View>
         </View>
-        <View style={styles.txtBox}>
+        <View style={styles.txtPart}>
           <Text style={styles.itemTxt}>{item.name}, {item.age}yrs, {item.weight}kg</Text>
         </View>
-      </View>
+      </TouchableOpacity>
     )
   }
 
@@ -83,7 +150,7 @@ export default function Home({ navigation }) {
               <MenuOption value='home' text='Home' />
               <MenuOption value='addChild' text='Add Child' />
               <MenuOption value='editChild' text='Edit Child' />
-              <MenuOption value='terms' text='Terms and Conditions' />
+              {/* <MenuOption value='terms' text='Terms and Conditions' /> */}
             </MenuOptions>
           </Menu>
 
@@ -93,7 +160,17 @@ export default function Home({ navigation }) {
         </View>
         <View style={styles.sideContainer}>
           <TouchableOpacity onPress={() => { }}>
-            <EntypoIcon name="user" style={styles.headerIcon}></EntypoIcon>
+
+            <Menu opened={toggleProfile} onSelect={(value) => { onProfile(value); setToggleProfile(!toggleProfile); }}>
+              <MenuTrigger onPress={() => setToggleProfile(!toggleProfile)}>
+                <Image style={styles.iconImg} source={Constants.user?.photo ? { uri: Constants.user.photo } : Images.defaultPhoto} resizeMode='cover' />
+              </MenuTrigger>
+              <MenuOptions customStyles={{ optionText: { fontSize: RFPercentage(2.2), paddingLeft: normalize(5) } }}>
+                <MenuOption value='view' text='View Profile' />
+                <MenuOption value='edit' text='Edit Profile' />
+              </MenuOptions>
+            </Menu>
+
           </TouchableOpacity>
         </View>
       </View>
@@ -106,17 +183,142 @@ export default function Home({ navigation }) {
           users.length == 0 &&
           <Text style={[styles.sideTxt, { marginTop: normalize(250, 'height') }]}>No Users</Text>
         }
-        <View style={{width: '100%'}}></View>
+        <View style={{ width: '100%' }}></View>
       </ScrollView>
+
+      {
+        toggleProfileModal &&
+        <ProfileModal user={user} toggleProfileModal={() => setToggleProfileModal(!toggleProfileModal)} />
+      }
+      {
+        toggleChildModal &&
+        <ChildModal childs={childs} toggleChildModal={() => setToggleChildModal(!toggleChildModal)} editChild={onEditChild} />
+      }
     </KeyboardAvoidingView>
 
   );
 }
 
+const ProfileModal = ({ user, toggleProfileModal }) => {
+  const foods = Constants.foods.filter(each => user.foods.includes(each.id));
+  const landscapes = Constants.landscapes.filter(each => user.landscapes.includes(each.id));
+
+  return (
+    <Modal isVisible={true} >
+      <View style={styles.modalBody}>
+        <TouchableOpacity onPress={() => { toggleProfileModal(false) }}>
+          <FontAwesomeIcon name="close" style={{ alignSelf: 'flex-end', fontSize: RFPercentage(3) }}></FontAwesomeIcon>
+        </TouchableOpacity>
+        <View style={styles.photoBox}>
+          <Image style={styles.photo} source={user.photo ? { uri: user.photo } : Images.defaultPhoto} resizeMode='cover' />
+        </View>
+        <Text style={styles.txt}>{user.name}</Text>
+        <Text style={styles.txt}>{user.phone}</Text>
+        <View style={styles.txtRow}>
+          <Text style={styles.txt}>{user.gender}</Text>
+          <Text style={styles.txt}>{user.age}yrs</Text>
+        </View>
+        <View style={styles.txtRow}>
+          <Text style={styles.txt}>H: {user.height}</Text>
+          <Text style={styles.txt}>W: {user.weight}kg</Text>
+        </View>
+
+        <ScrollView>
+          {
+            user.address.home &&
+            <Text style={styles.txt}>{user.address.home.address1}, {user.address.home.address2}, {user.address.home.city}, {user.address.home.country}</Text>
+          }
+          {
+            user.address.work ?
+              <Text style={styles.txt}>{user.address.work.address1}, {user.address.work.address2}, {user.address.work.city}, {user.address.work.country}</Text>
+              :
+              null
+          }
+          {
+            user.address.other ?
+              <Text style={styles.txt}>{user.address.other.address1}, {user.address.other.address2}, {user.address.other.city}, {user.address.other.country}</Text>
+              : null
+          }
+
+          <View style={styles.tagPart}>
+            {
+              foods.map(each => <Text style={[styles.txt, { marginTop: normalize(5, 'height'), marginRight: normalize(10) }]}>{each.name}</Text>)
+            }
+          </View>
+
+          <View style={styles.tagPart}>
+            {
+              landscapes.map(each => <Text style={[styles.txt, { marginTop: normalize(5, 'height'), marginRight: normalize(10) }]}>{each.name}</Text>)
+            }
+          </View>
+
+          <Text style={styles.txt}>{user.preference}</Text>
+          <Text style={styles.txt}>{user.medication}</Text>
+          <Text style={styles.txt}>{user.allergy}</Text>
+          <Text style={styles.txt}>{user.otherinfo}</Text>
+
+          <FlatList
+            keyExtractor={(item, index) => item.id}
+            horizontal={true}
+            data={user.pictures}
+            style={{ margin: normalize(10) }}
+            renderItem={({ item }) => (
+              <Image style={styles.pictureImg} source={{ uri: item.uri }} resizeMode='cover' />
+            )}
+          />
+
+        </ScrollView>
+      </View>
+    </Modal>
+  )
+}
+
+const ChildModal = ({ childs, toggleChildModal, editChild }) => {
+  return (
+    <Modal isVisible={true} >
+      <View style={[styles.modalBody, {width: '100%', height: '45%'}]}>
+        <TouchableOpacity onPress={() => { toggleChildModal(false) }}>
+          <FontAwesomeIcon name="close" style={{ alignSelf: 'flex-end', fontSize: RFPercentage(3) }}></FontAwesomeIcon>
+        </TouchableOpacity>
+        <FlatList
+          keyExtractor={(item, index) => item.id}
+          horizontal={true}
+          data={childs}
+          style={{ margin: normalize(10) }}
+          renderItem={({ item }) => (
+            <TouchableOpacity style={styles.childBox} onPress={() => editChild(item)}>
+              <View style={styles.photoBox}>
+                <Image style={styles.photo} source={item.photo ? { uri: item.photo } : Images.defaultPhoto} resizeMode='cover' />
+              </View>
+              <Text style={styles.txt}>{item.name}</Text>
+              <Text style={styles.txt}>{item.phone}</Text>
+              <View style={styles.txtRow}>
+                <Text style={styles.txt}>{item.gender}</Text>
+                <Text style={styles.txt}>{item.age}yrs</Text>
+              </View>
+              <View style={styles.txtRow}>
+                <Text style={styles.txt}>H: {item.height}</Text>
+                <Text style={styles.txt}>W: {item.weight}kg</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+        {
+          childs.length == 0 &&
+          <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={styles.sideTxt}>No Childs</Text>
+          </View>
+        }
+      </View>
+    </Modal>
+  )
+}
+
+
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    height: '100%'    
+    height: '100%'
   },
   header: {
     width: '100%',
@@ -132,6 +334,11 @@ const styles = StyleSheet.create({
   headerIcon: {
     fontSize: RFPercentage(3.5),
     color: Colors.whiteColor,
+  },
+  iconImg: {
+    width: normalize(30),
+    height: normalize(30),
+    borderRadius: normalize(15)
   },
   titleContainer: {
     width: '50%',
@@ -150,37 +357,42 @@ const styles = StyleSheet.create({
   },
 
   body: {
-    flex: 1,    
+    flex: 1,
   },
 
   userRow: {
     width: '90%',
-    height: normalize(80, 'height'),
+    height: normalize(100, 'height'),
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  photoBox: {
+  photoPart: {
     width: '30%',
     height: '100%',
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
-  photoImg: {
+  photoBox: {
     width: normalize(90),
     height: normalize(90),
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: normalize(45),
     borderWidth: normalize(3),
     borderColor: Colors.grey
   },
+  photoImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: normalize(45),
+  },
 
-  txtBox: {
+  txtPart: {
     width: '65%',
     height: '80%',
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: normalize(3),
-    borderColor: Colors.grey,
     paddingLeft: normalize(5)
   },
   itemTxt: {
@@ -189,4 +401,60 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.black,
   },
+
+  ///////////////
+
+  modalBody: {
+    width: '90%',
+    height: '90%',
+    backgroundColor: Colors.white,
+    alignSelf: 'center',
+    padding: normalize(20)
+  },
+  photoBox: {
+    width: normalize(80),
+    height: normalize(80),
+    borderWidth: normalize(3),
+    borderColor: Colors.grey,
+    borderRadius: normalize(40),
+    alignSelf: 'center',
+    marginTop: normalize(10, 'height')
+  },
+  photo: {
+    width: '100%',
+    height: '100%',
+    borderRadius: normalize(40),
+  },
+  txt: {
+    fontSize: RFPercentage(2.2),
+    fontWeight: '600',
+    color: Colors.black,
+    alignSelf: 'center',
+    marginTop: normalize(15, 'height')
+  },
+  txtRow: {
+    width: '50%',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignSelf: 'center',
+  },
+  tagPart: {
+    width: '80%',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: normalize(15, 'height')
+  },
+  pictureImg: {
+    width: normalize(80),
+    height: normalize(80),
+    borderWidth: normalize(3),
+    borderColor: Colors.grey,
+    marginRight: normalize(10)
+  },
+
+  childBox: {
+    width: normalize(130),
+    height: normalize(300, 'height')
+  },
 });
+

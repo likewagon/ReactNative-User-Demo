@@ -160,6 +160,7 @@ export default function Splash({ navigation }) {
     await getData('users').then(res => Constants.users = res);
     await getData('foods').then(res => Constants.foods = res.sort((a, b) => a.dispOrder - b.dispOrder));
     await getData('landscapes').then(res => Constants.landscapes = res.sort((a, b) => a.dispOrder - b.dispOrder));
+    await getData('childs').then(res => Constants.childs = res);
 
     goScreen();
   }
@@ -170,12 +171,13 @@ export default function Splash({ navigation }) {
         if (user) {
           setSpinner(false);
           Constants.user = JSON.parse(user);
-          if (Constants.user.profileStep == 1) navigation.navigate('Register', { screen: 'Detail' });
+          
+          if (Constants.user.profileStep == 1) { Constants.processType = 'newProfile'; navigation.navigate('Register', { screen: 'Detail' });}
           else if (Constants.user.profileStep == 2) navigation.navigate('Register', { screen: 'Address' });
           else if (Constants.user.profileStep == 3) navigation.navigate('Register', { screen: 'Preferences' });
           else if (Constants.user.profileStep == 4) navigation.navigate('Register', { screen: 'Pictures' });
           else if (Constants.user.profileStep == 5) navigation.navigate('Main', {screen: 'Home'});
-          // else if (Constants.user.profileStep == 5) navigation.navigate('Register', {screen: 'Pictures'});
+          // else if (Constants.user.profileStep == 5) navigation.navigate('Register', {screen: 'Detail'});
         }
         else {
           setSpinner(false);

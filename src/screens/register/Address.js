@@ -23,9 +23,8 @@ import Spinner from 'react-native-loading-spinner-overlay';
 import AsyncStorage from '@react-native-community/async-storage';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import DropDownPicker from 'react-native-dropdown-picker';
-import RNCountry from "react-native-countries";
 
-import { Colors, Images, Constants } from '@constants';
+import { Colors, Images, Constants, getCountries } from '@constants';
 import { signup, createUser, setData, checkInternet } from '../../service/firebase';
 
 export default function Address({ navigation }) {
@@ -33,34 +32,25 @@ export default function Address({ navigation }) {
 
   const [addressKind, setAddressKind] = useState('home');
   const [addressValues, setAddressValues] = useState({});
-    
-  const [countries, setCountries] = useState([]);
+
+  const [countries, setCountries] = useState(getCountries());
   const [countryDropShow, setCountryDropShow] = useState(false);
 
   const [refresh, setRefresh] = useState(false);
 
   useEffect(() => {
-    let countryNamesWithCodes = RNCountry.getCountryNamesWithCodes;
-    countryNamesWithCodes.sort((a, b) => a.name.localeCompare(b.name));
-    var tCountries = countryNamesWithCodes.map((each, index) => ({
-      label: each.name,
-      value: each.name
-    }))
-    setCountries(tCountries)
-  }, []);
-
-  useEffect(()=>{
+    const initialUser = Constants.processType === 'user' ? Constants.user : Constants.child;
     var tAddressValues = {
-      address1: Constants.user.address[addressKind]?.address1,
-      address2: Constants.user.address[addressKind]?.address2,
-      city: Constants.user.address[addressKind]?.city,
-      country: Constants.user.address[addressKind]?.country,
+      address1: initialUser.address[addressKind]?.address1,
+      address2: initialUser.address[addressKind]?.address2,
+      city: initialUser.address[addressKind]?.city,
+      country: initialUser.address[addressKind]?.country,
     }
     setAddressValues(tAddressValues);
   }, [addressKind])
 
-  function onSave(){
-    if(!addressValues.address1){
+  function onSave() {
+    if (!addressValues.address1) {
       Alert.alert(
         'Please enter address1',
         '',
@@ -70,7 +60,7 @@ export default function Address({ navigation }) {
       );
       return;
     }
-    if(!addressValues.city){
+    if (!addressValues.city) {
       Alert.alert(
         'Please enter city',
         '',
@@ -80,7 +70,7 @@ export default function Address({ navigation }) {
       );
       return;
     }
-    if(!addressValues.country){
+    if (!addressValues.country) {
       Alert.alert(
         'Please select country',
         '',
@@ -91,6 +81,11 @@ export default function Address({ navigation }) {
       return;
     }
 
+    if (Constants.processType === 'user') updateUser();
+    else if (Constants.processType === 'child') updateChild();
+  }
+
+  function updateUser(){
     setSpinner(true);
 
     var addressItem = {
@@ -100,32 +95,64 @@ export default function Address({ navigation }) {
       country: addressValues.country
     }
 
-    var nUser = {...Constants.user}
+    var nUser = { ...Constants.user }
+    nUser.location = Constants.location;
     nUser.address[addressKind] = addressItem;
     nUser.profileStep = 3;
 
     setData('users', 'update', nUser)
-    .then(()=>{
-      Constants.user = nUser;
-      AsyncStorage.setItem('userdemouser', JSON.stringify(Constants.user));
-      setRefresh(!refresh);
-      setSpinner(false);
-    })
-    .catch(err => {
-      console.log('update data error', err);
-      Alert.alert(
-        'Update data failed.',
-        '',
-        [
-          { text: "OK", onPress: () => setSpinner(false) }
-        ],
-      );
-    })
-        
+      .then(() => {
+        Constants.user = nUser;
+        AsyncStorage.setItem('userdemouser', JSON.stringify(Constants.user));
+        setRefresh(!refresh);
+        setSpinner(false);
+      })
+      .catch(err => {
+        console.log('update data error', err);
+        Alert.alert(
+          'Update data failed.',
+          '',
+          [
+            { text: "OK", onPress: () => setSpinner(false) }
+          ],
+        );
+      })
   }
 
-  function onNext(){
-    if(!Constants.user.address.home && !Constants.user.address.work && !Constants.user.address.other){
+  function updateChild(){
+    setSpinner(true);
+
+    var addressItem = {
+      address1: addressValues.address1,
+      address2: addressValues.address2,
+      city: addressValues.city,
+      country: addressValues.country
+    }
+
+    var nUser = { ...Constants.child }    
+    nUser.address[addressKind] = addressItem;
+    nUser.profileStep = 3;
+
+    setData('childs', 'update', nUser)
+      .then(() => {
+        Constants.child = nUser;        
+        setRefresh(!refresh);
+        setSpinner(false);
+      })
+      .catch(err => {
+        console.log('update data error', err);
+        Alert.alert(
+          'Update data failed.',
+          '',
+          [
+            { text: "OK", onPress: () => setSpinner(false) }
+          ],
+        );
+      })
+  }
+
+  function onNext() {
+    if (Constants.processType === 'user' && !Constants.user.address.home && !Constants.user.address.work && !Constants.user.address.other) {
       Alert.alert(
         'Please enter any address at least 1',
         '',
@@ -134,7 +161,7 @@ export default function Address({ navigation }) {
         ],
       );
       return;
-    }   
+    }
 
     navigation.navigate('Preferences');
   }
@@ -156,9 +183,9 @@ export default function Address({ navigation }) {
           <Text style={styles.titleTxt}>Address</Text>
         </View>
         <View style={styles.sideContainer}>
-          <TouchableOpacity onPress={() => { }}>
+          {/* <TouchableOpacity onPress={() => { }}>
             <Text style={styles.sideTxt}>Cancel</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 
@@ -166,36 +193,33 @@ export default function Address({ navigation }) {
 
         <View style={styles.mapBox}>
           {
-            () => {
-              if(Constants.location.latitude && Constants.location.longitude) {
-                return (
-                  <MapView
-                    initialRegion={{
-                      latitude: Constants.location.latitude,
-                      longitude: Constants.location.longitude,
-                      latitudeDelta: 0.0922,
-                      longitudeDelta: 0.0421,
-                    }}
-                    showsUserLocation={true}
-                    showsCompass={true}
-                    showsPointsOfInterest={false}
-                    zoomControlEnabled={true}
-                    style={{ flex: 1 }}
-                  />
-                )
-              }
-             }
+            (Constants.location.latitude && Constants.location.longitude) ?
+              <MapView
+                initialRegion={{
+                  latitude: Constants.location.latitude,
+                  longitude: Constants.location.longitude,
+                  latitudeDelta: 0.0922,
+                  longitudeDelta: 0.0421,
+                }}
+                showsUserLocation={true}
+                showsCompass={true}
+                showsPointsOfInterest={false}
+                zoomControlEnabled={true}
+                style={{ flex: 1 }}
+              />
+              :
+              null
           }
         </View>
 
         <View style={styles.addressBtnRow}>
-          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'home' ? {borderColor: Colors.red}:null, Constants.user.address.home ? {backgroundColor: Colors.yellow}:null]} onPress={() => {setAddressKind('home')}}>
+          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'home' ? { borderColor: Colors.red } : null, Constants.user.address.home ? { backgroundColor: Colors.yellow } : null]} onPress={() => { setAddressKind('home') }}>
             <Text style={styles.addressBtnTxt}>Home</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'work' ? {borderColor: Colors.red}:null, Constants.user.address.work ? {backgroundColor: Colors.yellow}:null]} onPress={() => {setAddressKind('work')}}>
+          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'work' ? { borderColor: Colors.red } : null, Constants.user.address.work ? { backgroundColor: Colors.yellow } : null]} onPress={() => { setAddressKind('work') }}>
             <Text style={styles.addressBtnTxt}>Work</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'other' ? {borderColor: Colors.red}:null, Constants.user.address.other ? {backgroundColor: Colors.yellow}:null]} onPress={() => {setAddressKind('other')}}>
+          <TouchableOpacity style={[styles.adderssBtn, addressKind === 'other' ? { borderColor: Colors.red } : null, Constants.user.address.other ? { backgroundColor: Colors.yellow } : null]} onPress={() => { setAddressKind('other') }}>
             <Text style={styles.addressBtnTxt}>Other</Text>
           </TouchableOpacity>
         </View>
@@ -205,7 +229,7 @@ export default function Address({ navigation }) {
           placeholder={'Please enter address1  *'}
           placeholderTextColor={Colors.grey}
           value={addressValues.address1}
-          onChangeText={(text) => { var tAddressValues = {...addressValues, address1: text}; setAddressValues(tAddressValues) }}
+          onChangeText={(text) => { var tAddressValues = { ...addressValues, address1: text }; setAddressValues(tAddressValues) }}
         >
         </TextInput>
 
@@ -214,7 +238,7 @@ export default function Address({ navigation }) {
           placeholder={'Please enter address2'}
           placeholderTextColor={Colors.grey}
           value={addressValues.address2}
-          onChangeText={(text) => { var tAddressValues = {...addressValues, address2: text}; setAddressValues(tAddressValues) }}
+          onChangeText={(text) => { var tAddressValues = { ...addressValues, address2: text }; setAddressValues(tAddressValues) }}
         >
         </TextInput>
 
@@ -223,7 +247,7 @@ export default function Address({ navigation }) {
           placeholder={'Please enter city  *'}
           placeholderTextColor={Colors.grey}
           value={addressValues.city}
-          onChangeText={(text) => { var tAddressValues = {...addressValues, city: text}; setAddressValues(tAddressValues) }}
+          onChangeText={(text) => { var tAddressValues = { ...addressValues, city: text }; setAddressValues(tAddressValues) }}
         >
         </TextInput>
 
@@ -242,9 +266,9 @@ export default function Address({ navigation }) {
               textAlign: 'center'
             }}
             containerStyle={{ width: '100%', height: normalize(45, 'height') }}
-            style={{ backgroundColor: 'transparent' }}            
+            style={{ backgroundColor: 'transparent' }}
             dropDownStyle={{ backgroundColor: 'transparent' }}
-            onChangeItem={(item) => { var tAddressValues = {...addressValues, country: item.value}; setAddressValues(tAddressValues) }}
+            onChangeItem={(item) => { var tAddressValues = { ...addressValues, country: item.value }; setAddressValues(tAddressValues) }}
             showArrow={false}
             dropDownMaxHeight={normalize(120, 'height')}
             onOpen={() => setCountryDropShow(true)}
@@ -252,7 +276,7 @@ export default function Address({ navigation }) {
           />
         </View>
 
-        <View style={[styles.btnRow, countryDropShow ? {marginTop: normalize(140, 'height')}: null]}>
+        <View style={[styles.btnRow, countryDropShow ? { marginTop: normalize(140, 'height') } : null]}>
           <TouchableOpacity style={styles.btn} onPress={() => onSave()}>
             <Text style={styles.btnTxt}>Save</Text>
           </TouchableOpacity>

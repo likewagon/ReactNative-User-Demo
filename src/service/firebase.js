@@ -111,8 +111,8 @@ export const setData = (kind = '', act, item) => {
             .collection(kind)
             .doc(res.id)
             .update(itemWithID)
-            .then((response) => {
-              resolve(res)
+            .then((response) => {              
+              resolve(itemWithID);
             })
             .catch((err) => {
               reject(err);
@@ -153,11 +153,9 @@ export const setData = (kind = '', act, item) => {
 export const uploadMedia = (folder, name, path) => {
   var milliSeconds = new Date().getTime();
   return new Promise((resolve, reject) => {
-
     let ref = storage().ref(`${folder}/${name}`);
-
     ref.putFile(path)
-      .then(async (res) => {
+      .then(async (res) => {        
         downloadURL = await ref.getDownloadURL();
         resolve(downloadURL);
       })

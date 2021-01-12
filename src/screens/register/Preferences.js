@@ -28,13 +28,14 @@ import { signup, createUser, setData, checkInternet } from '../../service/fireba
 
 export default function Preferences({ navigation }) {
   const [spinner, setSpinner] = useState(false);
-
-  const [selectedFoods, setSelectedFoods] = useState(Constants.user.foods);
-  const [selectedLandscapes, setSelectedLandscapes] = useState(Constants.user.landscapes);
-  const [preference, setPreference] = useState();
-  const [medication, setMedication] = useState();
-  const [allergy, setAllergy] = useState();
-  const [otherinfo, setOtherinfo] = useState();
+  
+  const initialUser = Constants.processType === 'user' ? Constants.user : Constants.child;
+  const [selectedFoods, setSelectedFoods] = useState(initialUser.foods);
+  const [selectedLandscapes, setSelectedLandscapes] = useState(initialUser.landscapes);
+  const [preference, setPreference] = useState(initialUser.preference);
+  const [medication, setMedication] = useState(initialUser.medication);
+  const [allergy, setAllergy] = useState(initialUser.allergy);
+  const [otherinfo, setOtherinfo] = useState(initialUser.otherinfo);
 
   const [foods, setFoods] = useState(Constants.foods);
   const [landscapes, setLandscapes] = useState(Constants.landscapes);
@@ -64,8 +65,7 @@ export default function Preferences({ navigation }) {
   }
 
   function onNext(){
-    setSpinner(true);
-
+    
     if(selectedFoods.length == 0){
       Alert.alert(
         'Please select any food at least 1',
@@ -73,22 +73,24 @@ export default function Preferences({ navigation }) {
         [
           { text: "OK", onPress: () => setSpinner(false) }
         ],
-      );
-      return;
-    }
-
-    if(selectedLandscapes.length == 0){
-      Alert.alert(
-        'Please select any landscape at least 1',
-        '',
+        );
+        return;
+      }
+      
+      if(selectedLandscapes.length == 0){
+        Alert.alert(
+          'Please select any landscape at least 1',
+          '',
         [
           { text: "OK", onPress: () => setSpinner(false) }
         ],
       );
       return;
     }
+    
+    setSpinner(true);
 
-    var nUser = {...Constants.user}    
+    var nUser = Constants.processType === 'user' ? {...Constants.user} : {...Constants.child};
     nUser.foods = selectedFoods;
     nUser.landscapes = selectedLandscapes;
     if(preference) nUser.preference = preference;
@@ -97,12 +99,20 @@ export default function Preferences({ navigation }) {
     if(otherinfo) nUser.otherinfo = otherinfo;    
     nUser.profileStep = 4;
 
-    setData('users', 'update', nUser)
+    var collection = Constants.processType === 'user' ? 'users' : 'childs';
+    setData(collection, 'update', nUser)
     .then(()=>{
-      Constants.user = nUser;
-      AsyncStorage.setItem('userdemouser', JSON.stringify(Constants.user));      
-      setSpinner(false);
-      navigation.navigate('Pictures');
+      if(Constants.processType === 'user'){
+        Constants.user = nUser;
+        AsyncStorage.setItem('userdemouser', JSON.stringify(Constants.user));      
+        setSpinner(false);
+        navigation.navigate('Pictures');
+      }
+      else if(Constants.processType === 'child'){
+        Constants.child = nUser;        
+        setSpinner(false);
+        navigation.navigate('Main', {screen: 'Home'});
+      }
     })
     .catch(err => {
       console.log('update data error', err);
@@ -130,12 +140,12 @@ export default function Preferences({ navigation }) {
           </TouchableOpacity>
         </View>
         <View style={styles.titleContainer}>
-          <Text style={styles.titleTxt}>Your Preferences</Text>
+          <Text style={styles.titleTxt}>Preferences</Text>
         </View>
         <View style={styles.sideContainer}>
-          <TouchableOpacity onPress={() => { }}>
+          {/* <TouchableOpacity onPress={() => { }}>
             <Text style={styles.sideTxt}>Cancel</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
 
@@ -212,7 +222,13 @@ export default function Preferences({ navigation }) {
 
       <View style={styles.btnRow}>        
         <TouchableOpacity style={styles.btn} onPress={() => onNext()}>
-          <Text style={styles.btnTxt}>Next {'>>'}</Text>
+          {
+            Constants.processType === 'user' && <Text style={styles.btnTxt}>Next {'>>'}</Text>
+          }
+          {
+            Constants.processType === 'child' && <Text style={styles.btnTxt}>Finish</Text>
+          }
+          
         </TouchableOpacity>
       </View>
 

@@ -1,5 +1,5 @@
 //firestore document
-const user_item = {
+const parent_item = {
   id: '', //string unique id
   name: '', //string
   phone: '', //string
@@ -26,6 +26,29 @@ const user_item = {
   pictures: [], //array of string
   pid: '', //string parent_id
   profileStep: '', //number 0:signup 1:detail 2:address 3:preferences 4:pictures
+}
+
+const child_item = {
+  id: '', //string unique id
+  name: '', //string
+  phone: '', //string
+  age: '', //number
+  gender: '', //string Male/Female
+  height: '', //string 5'10"
+  weight: '', //number
+  photo: '', //string
+  address: { 
+    home: '', //address_item
+    work: '',
+    other: ''
+  },
+  foods: [], //array of string array of food_id
+  landscapes: [], //array of string array of landscape_id
+  preference: '', //string
+  medication: '', //string
+  allergy: '', //string
+  otherinfo: '', //string
+  pid: '', //string parent_id
 }
 
 const address_item = {

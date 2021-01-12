@@ -25,60 +25,40 @@ import DropDownPicker from 'react-native-dropdown-picker';
 import { launchCamera, launchImageLibrary } from 'react-native-image-picker';
 
 import { Colors, Images, Constants } from '@constants';
+import { getAges, getHeights, getWeights } from '@constants';
 import { signup, createUser, setData, checkInternet, uploadMedia } from '../../service/firebase';
 
 export default function Detail({ navigation }) {
   const [spinner, setSpinner] = useState(false);
-  const [name, setName] = useState();
-  const [phone, setPhone] = useState(Constants.user.phone);
-  const [age, setAge] = useState();
-  const [gender, setGender] = useState();
-  const [height, setHeight] = useState();
-  const [weight, setWeight] = useState();
-  const [photo, setPhoto] = useState();
-  
-  const [ages, setAges] = useState([]);
-  const [heights, setHeights] = useState([]);
-  const [weights, setWeights] = useState([]);
+  const initialUser = Constants.processType === 'user' ? Constants.user : Constants.child;
+  const [name, setName] = useState(initialUser.name);
+  const [phone, setPhone] = useState(initialUser.phone);
+  const [age, setAge] = useState(initialUser.age);
+  const [gender, setGender] = useState(initialUser.gender);
+  const [height, setHeight] = useState(initialUser.height);
+  const [weight, setWeight] = useState(initialUser.weight);
+  const [photo, setPhoto] = useState(initialUser.photo);
+
+  const [ages, setAges] = useState(getAges());
+  const [heights, setHeights] = useState(getHeights());
+  const [weights, setWeights] = useState(getWeights());
 
   const [ageDropShow, setAgeDropShow] = useState(false);
   const [heightDropShow, setHeightDropShow] = useState(false);
   const [weightDropShow, setWeightDropShow] = useState(false);
 
-  useEffect(() => {
-    var tAges = [];
-    for (var age = 0; age < 100; age++) {
-      tAges.push({ label: age + 'yrs', value: age })
-    }
-    setAges(tAges);
-
-    var tHeights = [];
-    for (var feet = 1; feet <= 6; feet++) {
-      for (var inch = 0; inch < 12; inch++) {
-        tHeights.push({ label: `${feet}'${inch}"`, value: `${feet}'${inch}"` })
-      }
-    }
-    setHeights(tHeights);
-
-    var tWeights = [];
-    for (var w = 20; w <= 100; w++) {
-      tWeights.push({ label: w + 'kg', value: w })
-    }
-    setWeights(tWeights);
-  }, [])
-
   onPhotoLoad = () => {
     var options = {
       mediaType: 'photo',
-      maxWidth: normalize(90),
-      maxHeight: normalize(90)
+      maxWidth: normalize(100),
+      maxHeight: normalize(100)
     }
 
     launchImageLibrary(options, response => {
       if (response.didCancel) {
       } else if (response.errorMessage) {
         Alert.alert('Loading Photo Failed.');
-      } else {        
+      } else {
         setPhoto(response.uri)
       }
     })
@@ -87,12 +67,14 @@ export default function Detail({ navigation }) {
   uploadPhoto = () => {
     return new Promise(async (resolve, reject) => {
       var platformPhotoLocalPath = Platform.OS === "android" ? photo : photo.replace("file://", "")
+      var filename = Constants.processType === 'user' ? Constants.user?.id : Constants.child?.id;
 
-      await uploadMedia('photos', Constants.user?.id, platformPhotoLocalPath)
+      await uploadMedia('photos', filename, platformPhotoLocalPath)
         .then((downloadURL) => {
           if (!downloadURL) return;
           // console.log('downloadURL', downloadURL)
-          Constants.user.photo = downloadURL;
+          if (Constants.processType === 'user') Constants.user.photo = downloadURL;
+          else if (Constants.processType === 'child') Constants.child.photo = downloadURL;
           resolve();
         })
         .catch((err) => {
@@ -109,10 +91,11 @@ export default function Detail({ navigation }) {
     }
 
     setSpinner(true);
-    if (photo) {
+    if (photo && !photo.includes('https://')) {
       await uploadPhoto()
         .then(() => {
-          updateUser();
+          if (Constants.processType === 'user') updateUser();
+          else if (Constants.processType === 'child') updateChild();
         })
         .catch((err) => {
           console.log('upload photo error', err);
@@ -126,7 +109,8 @@ export default function Detail({ navigation }) {
         })
     }
     else {
-      updateUser();
+      if (Constants.processType === 'user') updateUser();
+      else if (Constants.processType === 'child') updateChild();
     }
   }
 
@@ -135,7 +119,7 @@ export default function Detail({ navigation }) {
     if (age) Constants.user.age = age;
     if (gender) Constants.user.gender = gender;
     if (height) Constants.user.height = height;
-    if (weight) Constants.user.weight = weight;    
+    if (weight) Constants.user.weight = weight;
     Constants.user.profileStep = 2;
 
     setData('users', 'update', Constants.user)
@@ -148,6 +132,31 @@ export default function Detail({ navigation }) {
         console.log('update user error', err);
         Alert.alert(
           'Update user failed.',
+          '',
+          [
+            { text: "OK", onPress: () => setSpinner(false) }
+          ],
+        );
+      })
+  }
+
+  function updateChild() {
+    Constants.child.name = name;
+    if (age) Constants.child.age = age;
+    if (gender) Constants.child.gender = gender;
+    if (height) Constants.child.height = height;
+    if (weight) Constants.child.weight = weight;
+    Constants.child.profileStep = 2;
+    
+    setData('childs', 'update', Constants.child)
+      .then(() => {
+        setSpinner(false);        
+        navigation.navigate('Address');
+      })
+      .catch(err => {
+        console.log('update child error', err);
+        Alert.alert(
+          'Update child failed.',
           '',
           [
             { text: "OK", onPress: () => setSpinner(false) }
@@ -170,10 +179,10 @@ export default function Detail({ navigation }) {
           </TouchableOpacity> */}
         </View>
         <View style={styles.titleContainer}>
-          <Text style={styles.titleTxt}>Your Details</Text>
+          <Text style={styles.titleTxt}>Details</Text>
         </View>
         <View style={styles.sideContainer}>
-          <TouchableOpacity onPress={() => { }}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <Text style={styles.sideTxt}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -182,7 +191,7 @@ export default function Detail({ navigation }) {
       <ScrollView style={styles.body} contentContainerStyle={{ justifyContent: 'center', alignItems: 'center' }}>
         <TextInput
           style={styles.inputBox}
-          placeholder={'Please enter your full name  *'}
+          placeholder={'Please enter full name  *'}
           placeholderTextColor={Colors.grey}
           value={name}
           onChangeText={(text) => setName(text)}
@@ -193,14 +202,14 @@ export default function Detail({ navigation }) {
           style={styles.inputBox}
           placeholderTextColor={Colors.grey}
           value={phone}
-          editable={false}
+          editable={Constants.processType === 'user' ? false : true}
         >
         </TextInput>
 
         <View style={{ width: '80%', marginTop: normalize(20, 'height') }}>
           <DropDownPicker
             items={ages}
-            defaultValue={age}
+            defaultValue={age ?? ''}
             placeholder='Please enter age'
             placeholderStyle={{
               fontSize: RFPercentage(2.4),
@@ -236,7 +245,7 @@ export default function Detail({ navigation }) {
           <View style={{ width: '45%' }}>
             <DropDownPicker
               items={heights}
-              defaultValue={height}
+              defaultValue={height ?? ''}
               placeholder='Please enter height'
               placeholderStyle={{
                 fontSize: RFPercentage(2.4),
@@ -260,7 +269,7 @@ export default function Detail({ navigation }) {
           <View style={{ width: '45%' }}>
             <DropDownPicker
               items={weights}
-              defaultValue={weight}
+              defaultValue={weight ?? ''}
               placeholder='Please enter weight'
               placeholderStyle={{
                 fontSize: RFPercentage(2.4),
@@ -288,11 +297,9 @@ export default function Detail({ navigation }) {
             <View style={styles.photoImgBox}>
               <TouchableOpacity style={styles.photoBtn} onPress={() => onPhotoLoad()}>
                 {
-                  photo &&
-                  <Image style={styles.photoImg} source={{ uri: photo }} resizeMode='stretch' />
-                }
-                {
-                  !photo &&
+                  photo ? 
+                  <Image style={styles.photoImg} source={{ uri: photo }} resizeMode='cover' />
+                  :
                   <>
                     <EntypoIcon name="plus" style={styles.photoTxt}></EntypoIcon>
                     <Text style={styles.photoTxt}>photo</Text>

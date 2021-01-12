@@ -131,7 +131,7 @@ export default function Pictures({ navigation }) {
         })
     }
     else {
-      navigation.navigate('Main', {screen: 'Home'});
+      updateUser();
     }    
   }
 
@@ -197,24 +197,12 @@ export default function Pictures({ navigation }) {
               <TouchableOpacity style={styles.pictureBtn} onPress={() => onPicture(each)}>
                 {
                   each.uri &&
-                  <Image style={styles.pictureImg} source={{ uri: each.uri }} resizeMode='stretch' />
+                  <Image style={styles.pictureImg} source={{ uri: each.uri }} resizeMode='cover' />
                 }
               </TouchableOpacity>
             </View>
           ))
         }
-        {/* {
-          newPictures.map((each, index) => (
-            <View style={styles.pictureImgBox}>
-              <TouchableOpacity style={styles.pictureBtn} onPress={() => onPicture(each)}>
-                {
-                  each.uri &&
-                  <Image style={styles.pictureImg} source={{ uri: each.uri }} resizeMode='stretch' />
-                }
-              </TouchableOpacity>
-            </View>
-          ))
-        } */}
 
         <View style={styles.pictureImgBox}>
           <TouchableOpacity style={styles.pictureBtn} onPress={() => onPicture()}>
