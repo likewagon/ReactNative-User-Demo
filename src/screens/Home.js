@@ -56,21 +56,11 @@ export default function Home({ navigation }) {
       // console.log('offline timestamp')
     });
 
-    var promises = users.map(each => {
-      return new Promise((resolve, reject) => {
-        var ref = database().ref(`/online/${each.id}`);
-        ref.once('value').then(snapshot => {
-          var val = snapshot.val();
-          resolve({ id: each.id, val: val });
-        }).then(err => reject(err))
-      })
-    })
-    Promise.all(promises).then(values => {
-      console.log('users status', values);
-      setUsersStatus(values);
-    }).catch(err => {
-      console.log('load status error', err)
-    })
+    const allRef = database().ref(`/online`);
+    allRef.on('value', snapshot=>{
+      var usersStatus = snapshot.val();
+      setUsersStatus(usersStatus);
+    })    
   }, []);
 
   useEffect(() => {
@@ -157,16 +147,19 @@ export default function Home({ navigation }) {
   }
 
   function renderUser(item) {
-    var status = usersStatus.find(each => each.id == item.id);
-    var statusValue = '';
-    if (status) statusValue = status.val;
+    let statusValue = usersStatus[item.id];    
+    let lastSeenDate, lastSeenTime;
+    if(statusValue !== 'online'){
+      lastSeenDate = new Date(statusValue).toLocaleDateString("en-US");
+      lastSeenTime = new Date(statusValue).toLocaleTimeString("en-US");
+    }
 
     return (
       <TouchableOpacity key={item.id} style={styles.userRow} onPress={() => onUser(item)}>
         <View style={styles.photoPart}>
           <View style={styles.photoBox}>
             <Image style={styles.photoImg} source={{ uri: item.photo }} resizeMode='cover' />
-            <View style={[styles.statusCircle, status === 'online' ? { backgroundColor: Colors.green } : { backgroundColor: Colors.yellow }]}></View>
+            <View style={[styles.statusCircle, statusValue === 'online' ? { backgroundColor: Colors.green } : { backgroundColor: Colors.yellow }]}></View>
           </View>
         </View>
         <View style={styles.txtPart}>
@@ -174,9 +167,9 @@ export default function Home({ navigation }) {
             <Text style={styles.itemTxt}>{item.name}, {item.age}yrs, {item.weight}kg</Text>
           </View>
           {
-            status !== 'online' ?
+            statusValue !== 'online' ?
               <View style={styles.txtBottomRow}>
-                <Text style={styles.itemTxt}>Last seen at {statusValue}</Text>
+                <Text style={styles.itemTxt}>Last seen at {`${lastSeenTime}, ${lastSeenDate}`}</Text>
               </View>
               :
               null
@@ -443,12 +436,11 @@ const styles = StyleSheet.create({
   },
   statusCircle: {
     position: 'absolute',
-    left: normalize(62),
-    top: normalize(62),
+    left: normalize(60),
+    top: normalize(60),
     width: normalize(15),
     height: normalize(15),
-    borderRadius: normalize(10),
-    backgroundColor: Colors.yellow
+    borderRadius: normalize(10),    
   },
 
   txtPart: {

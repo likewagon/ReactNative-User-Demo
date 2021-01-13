@@ -56,8 +56,7 @@ export default function Detail({ navigation }) {
       setGender(initialUser.gender);
       setHeight(initialUser.height);
       setWeight(initialUser.weight);
-      setPhoto(initialUser.photo);
-      console.log('every detail', Constants.processType)
+      setPhoto(initialUser.photo);      
     });
     return unsubscribe;        
   }, [navigation]);
