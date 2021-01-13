@@ -59,10 +59,10 @@ export default function Home({ navigation }) {
     var promises = users.map(each => {
       return new Promise((resolve, reject) => {
         var ref = database().ref(`/online/${each.id}`);
-        ref.once('value').then(snapshot => {
+        ref.on('value').then(snapshot => {
           var val = snapshot.val();
           resolve({ id: each.id, val: val });
-        }).then(err => reject(err))
+        }).catch(err => reject(err))
       })
     })
     Promise.all(promises).then(values => {
@@ -166,7 +166,7 @@ export default function Home({ navigation }) {
         <View style={styles.photoPart}>
           <View style={styles.photoBox}>
             <Image style={styles.photoImg} source={{ uri: item.photo }} resizeMode='cover' />
-            <View style={[styles.statusCircle, status === 'online' ? { backgroundColor: Colors.green } : { backgroundColor: Colors.yellow }]}></View>
+            <View style={[styles.statusCircle, statusValue === 'online' ? { backgroundColor: Colors.green } : { backgroundColor: Colors.yellow }]}></View>
           </View>
         </View>
         <View style={styles.txtPart}>
@@ -174,7 +174,7 @@ export default function Home({ navigation }) {
             <Text style={styles.itemTxt}>{item.name}, {item.age}yrs, {item.weight}kg</Text>
           </View>
           {
-            status !== 'online' ?
+            statusValue !== 'online' ?
               <View style={styles.txtBottomRow}>
                 <Text style={styles.itemTxt}>Last seen at {statusValue}</Text>
               </View>
@@ -443,12 +443,11 @@ const styles = StyleSheet.create({
   },
   statusCircle: {
     position: 'absolute',
-    left: normalize(62),
-    top: normalize(62),
+    left: normalize(60),
+    top: normalize(60),
     width: normalize(15),
     height: normalize(15),
     borderRadius: normalize(10),
-    backgroundColor: Colors.yellow
   },
 
   txtPart: {
