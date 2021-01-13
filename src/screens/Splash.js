@@ -166,6 +166,7 @@ export default function Splash({ navigation }) {
   }
 
   goScreen = () => {
+    // AsyncStorage.removeItem('userdemouser');
     AsyncStorage.getItem('userdemouser')
       .then((user) => {
         if (user) {

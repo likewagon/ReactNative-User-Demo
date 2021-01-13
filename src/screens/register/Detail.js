@@ -30,14 +30,14 @@ import { signup, createUser, setData, checkInternet, uploadMedia } from '../../s
 
 export default function Detail({ navigation }) {
   const [spinner, setSpinner] = useState(false);
-  const initialUser = Constants.processType === 'user' ? Constants.user : Constants.child;
-  const [name, setName] = useState(initialUser.name);
-  const [phone, setPhone] = useState(initialUser.phone);
-  const [age, setAge] = useState(initialUser.age);
-  const [gender, setGender] = useState(initialUser.gender);
-  const [height, setHeight] = useState(initialUser.height);
-  const [weight, setWeight] = useState(initialUser.weight);
-  const [photo, setPhoto] = useState(initialUser.photo);
+  
+  const [name, setName] = useState();
+  const [phone, setPhone] = useState();
+  const [age, setAge] = useState();
+  const [gender, setGender] = useState();
+  const [height, setHeight] = useState();
+  const [weight, setWeight] = useState();
+  const [photo, setPhoto] = useState();
 
   const [ages, setAges] = useState(getAges());
   const [heights, setHeights] = useState(getHeights());
@@ -46,6 +46,21 @@ export default function Detail({ navigation }) {
   const [ageDropShow, setAgeDropShow] = useState(false);
   const [heightDropShow, setHeightDropShow] = useState(false);
   const [weightDropShow, setWeightDropShow] = useState(false);
+
+  useEffect( ()=>{
+    const unsubscribe = navigation.addListener('focus', async ()=>{      
+      const initialUser = Constants.processType === 'user' ? Constants.user : Constants.child;
+      setName(initialUser.name);
+      setPhone(initialUser.phone);
+      setAge(initialUser.age);
+      setGender(initialUser.gender);
+      setHeight(initialUser.height);
+      setWeight(initialUser.weight);
+      setPhoto(initialUser.photo);
+      console.log('every detail', Constants.processType)
+    });
+    return unsubscribe;        
+  }, [navigation]);
 
   onPhotoLoad = () => {
     var options = {
@@ -202,6 +217,7 @@ export default function Detail({ navigation }) {
           style={styles.inputBox}
           placeholderTextColor={Colors.grey}
           value={phone}
+          onChangeText={(text)=>setPhone(text)}
           editable={Constants.processType === 'user' ? false : true}
         >
         </TextInput>

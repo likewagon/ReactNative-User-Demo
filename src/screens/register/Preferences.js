@@ -29,16 +29,28 @@ import { signup, createUser, setData, checkInternet } from '../../service/fireba
 export default function Preferences({ navigation }) {
   const [spinner, setSpinner] = useState(false);
   
-  const initialUser = Constants.processType === 'user' ? Constants.user : Constants.child;
-  const [selectedFoods, setSelectedFoods] = useState(initialUser.foods);
-  const [selectedLandscapes, setSelectedLandscapes] = useState(initialUser.landscapes);
-  const [preference, setPreference] = useState(initialUser.preference);
-  const [medication, setMedication] = useState(initialUser.medication);
-  const [allergy, setAllergy] = useState(initialUser.allergy);
-  const [otherinfo, setOtherinfo] = useState(initialUser.otherinfo);
+  const [selectedFoods, setSelectedFoods] = useState([]);
+  const [selectedLandscapes, setSelectedLandscapes] = useState([]);
+  const [preference, setPreference] = useState();
+  const [medication, setMedication] = useState();
+  const [allergy, setAllergy] = useState();
+  const [otherinfo, setOtherinfo] = useState();
 
   const [foods, setFoods] = useState(Constants.foods);
   const [landscapes, setLandscapes] = useState(Constants.landscapes);
+
+  useEffect( ()=>{
+    const unsubscribe = navigation.addListener('focus', async ()=>{      
+      const initialUser = Constants.processType === 'user' ? Constants.user : Constants.child;
+      setSelectedFoods(initialUser.foods);
+      setSelectedLandscapes(initialUser.landscapes);
+      setPreference(initialUser.preference);
+      setMedication(initialUser.medication);
+      setAllergy(initialUser.allergy);
+      setOtherinfo(initialUser.otherinfo);
+    });
+    return unsubscribe;        
+  }, [navigation]);
 
   function onFoodItem(item){
     if(selectedFoods.includes(item.id)){

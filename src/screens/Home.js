@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import {
   StyleSheet,
@@ -30,7 +31,8 @@ import {
 } from 'react-native-popup-menu';
 
 import { Colors, Images, Constants } from '@constants';
-import { signup, createUser, setData, checkInternet } from '../service/firebase';
+import { signup, createUser, getData, setData, checkInternet } from '../service/firebase';
+import database from '@react-native-firebase/database';
 
 export default function Home({ navigation }) {
   const [spinner, setSpinner] = useState(false);
@@ -40,14 +42,49 @@ export default function Home({ navigation }) {
   const [toggleProfileModal, setToggleProfileModal] = useState(false);
   const [toggleChildModal, setToggleChildModal] = useState(false);
 
-  const [users, setUsers] = useState(Constants.users);
+  const [users, setUsers] = useState(Constants.users.filter(each => each.id != Constants.user.id));
+  const [usersStatus, setUsersStatus] = useState([]);
   const [user, setUser] = useState(); //for popup user
   const [childs, setChilds] = useState([]);
 
   useEffect(() => {
-    var childs = Constants.childs.filter(each => each.pid == Constants.user.id);
-    setChilds(childs);
-  }, [])
+    const reference = database().ref(`/online/${Constants.user.id}`);
+    reference.set('online').then(() => {
+      // console.log('online presence set')
+    });
+    reference.onDisconnect().set(database.ServerValue.TIMESTAMP).then(() => {
+      // console.log('offline timestamp')
+    });
+
+    var promises = users.map(each => {
+      return new Promise((resolve, reject) => {
+        var ref = database().ref(`/online/${each.id}`);
+        ref.once('value').then(snapshot => {
+          var val = snapshot.val();
+          resolve({ id: each.id, val: val });
+        }).then(err => reject(err))
+      })
+    })
+    Promise.all(promises).then(values => {
+      console.log('users status', values);
+      setUsersStatus(values);
+    }).catch(err => {
+      console.log('load status error', err)
+    })
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', async () => {
+      await getData('childs')
+        .then(res => {
+          Constants.childs = res;
+          var childs = Constants.childs.filter(each => each.pid == Constants.user.id);
+          setChilds(childs);
+        })
+        .catch(err => { console.log('loading childs error', err) });
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   function onMenu(value) {
     if (value === 'home') {
@@ -79,7 +116,7 @@ export default function Home({ navigation }) {
       setSpinner(true);
       setData('childs', 'add', child)
         .then((res) => {
-          setSpinner(false);          
+          setSpinner(false);
           Constants.child = res;
           Constants.processType = 'child';
           navigation.navigate('Register', { screen: 'Detail' });
@@ -102,6 +139,7 @@ export default function Home({ navigation }) {
       setToggleProfileModal(true);
     }
     else if (value == 'edit') {
+      Constants.processType = 'user';
       navigation.navigate('Register', { screen: 'Detail' })
     }
   }
@@ -114,19 +152,35 @@ export default function Home({ navigation }) {
   function onEditChild(child) {
     Constants.processType = 'child';
     Constants.child = child;
+    setToggleChildModal(false);
     navigation.navigate('Register', { screen: 'Detail' });
   }
 
   function renderUser(item) {
+    var status = usersStatus.find(each => each.id == item.id);
+    var statusValue = '';
+    if (status) statusValue = status.val;
+
     return (
       <TouchableOpacity key={item.id} style={styles.userRow} onPress={() => onUser(item)}>
         <View style={styles.photoPart}>
           <View style={styles.photoBox}>
             <Image style={styles.photoImg} source={{ uri: item.photo }} resizeMode='cover' />
+            <View style={[styles.statusCircle, status === 'online' ? { backgroundColor: Colors.green } : { backgroundColor: Colors.yellow }]}></View>
           </View>
         </View>
         <View style={styles.txtPart}>
-          <Text style={styles.itemTxt}>{item.name}, {item.age}yrs, {item.weight}kg</Text>
+          <View style={styles.txtTopRow}>
+            <Text style={styles.itemTxt}>{item.name}, {item.age}yrs, {item.weight}kg</Text>
+          </View>
+          {
+            status !== 'online' ?
+              <View style={styles.txtBottomRow}>
+                <Text style={styles.itemTxt}>Last seen at {statusValue}</Text>
+              </View>
+              :
+              null
+          }
         </View>
       </TouchableOpacity>
     )
@@ -242,13 +296,13 @@ const ProfileModal = ({ user, toggleProfileModal }) => {
 
           <View style={styles.tagPart}>
             {
-              foods.map(each => <Text style={[styles.txt, { marginTop: normalize(5, 'height'), marginRight: normalize(10) }]}>{each.name}</Text>)
+              foods.map((each, index) => <Text key={index} style={[styles.txt, { marginTop: normalize(5, 'height'), marginRight: normalize(10) }]}>{each.name}</Text>)
             }
           </View>
 
           <View style={styles.tagPart}>
             {
-              landscapes.map(each => <Text style={[styles.txt, { marginTop: normalize(5, 'height'), marginRight: normalize(10) }]}>{each.name}</Text>)
+              landscapes.map((each, index) => <Text key={index} style={[styles.txt, { marginTop: normalize(5, 'height'), marginRight: normalize(10) }]}>{each.name}</Text>)
             }
           </View>
 
@@ -276,7 +330,7 @@ const ProfileModal = ({ user, toggleProfileModal }) => {
 const ChildModal = ({ childs, toggleChildModal, editChild }) => {
   return (
     <Modal isVisible={true} >
-      <View style={[styles.modalBody, {width: '100%', height: '45%'}]}>
+      <View style={[styles.modalBody, { width: '100%', height: '50%' }]}>
         <TouchableOpacity onPress={() => { toggleChildModal(false) }}>
           <FontAwesomeIcon name="close" style={{ alignSelf: 'flex-end', fontSize: RFPercentage(3) }}></FontAwesomeIcon>
         </TouchableOpacity>
@@ -293,12 +347,12 @@ const ChildModal = ({ childs, toggleChildModal, editChild }) => {
               <Text style={styles.txt}>{item.name}</Text>
               <Text style={styles.txt}>{item.phone}</Text>
               <View style={styles.txtRow}>
-                <Text style={styles.txt}>{item.gender}</Text>
-                <Text style={styles.txt}>{item.age}yrs</Text>
+                {item.gender ? <Text style={styles.txt}>{item.gender}</Text> : null}
+                {item.age ? <Text style={styles.txt}>{item.age}yrs</Text> : null}
               </View>
               <View style={styles.txtRow}>
-                <Text style={styles.txt}>H: {item.height}</Text>
-                <Text style={styles.txt}>W: {item.weight}kg</Text>
+                {item.height ? <Text style={styles.txt}>H: {item.height}</Text> : null}
+                {item.weight ? <Text style={styles.txt}>W: {item.weight}kg</Text> : null}
               </View>
             </TouchableOpacity>
           )}
@@ -387,13 +441,38 @@ const styles = StyleSheet.create({
     height: '100%',
     borderRadius: normalize(45),
   },
+  statusCircle: {
+    position: 'absolute',
+    left: normalize(62),
+    top: normalize(62),
+    width: normalize(15),
+    height: normalize(15),
+    borderRadius: normalize(10),
+    backgroundColor: Colors.yellow
+  },
 
   txtPart: {
     width: '65%',
     height: '80%',
+    justifyContent: 'center'
+  },
+  txtTopRow: {
+    width: '100%',
+    minHeight: '40%',    
     flexDirection: 'row',
     alignItems: 'center',
-    paddingLeft: normalize(5)
+    paddingLeft: normalize(5),
+  },
+  txtBottomRow: {
+    width: '100%',
+    height: '40%',
+    paddingLeft: normalize(5),
+  },
+  statusPart: {
+    width: '65%',
+    height: '20%',
+    paddingLeft: normalize(5),
+    borderWidth: 2
   },
   itemTxt: {
     width: '100%',
@@ -433,7 +512,7 @@ const styles = StyleSheet.create({
     marginTop: normalize(15, 'height')
   },
   txtRow: {
-    width: '50%',
+    width: '70%',
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignSelf: 'center',
@@ -454,7 +533,7 @@ const styles = StyleSheet.create({
 
   childBox: {
     width: normalize(130),
-    height: normalize(300, 'height')
+    height: normalize(350, 'height')
   },
 });
 
