@@ -56,21 +56,11 @@ export default function Home({ navigation }) {
       // console.log('offline timestamp')
     });
 
-    var promises = users.map(each => {
-      return new Promise((resolve, reject) => {
-        var ref = database().ref(`/online/${each.id}`);
-        ref.on('value').then(snapshot => {
-          var val = snapshot.val();
-          resolve({ id: each.id, val: val });
-        }).catch(err => reject(err))
-      })
-    })
-    Promise.all(promises).then(values => {
-      console.log('users status', values);
-      setUsersStatus(values);
-    }).catch(err => {
-      console.log('load status error', err)
-    })
+    const allRef = database().ref(`/online`);
+    allRef.on('value', snapshot=>{
+      var usersStatus = snapshot.val();
+      setUsersStatus(usersStatus);
+    })    
   }, []);
 
   useEffect(() => {
@@ -157,9 +147,12 @@ export default function Home({ navigation }) {
   }
 
   function renderUser(item) {
-    var status = usersStatus.find(each => each.id == item.id);
-    var statusValue = '';
-    if (status) statusValue = status.val;
+    let statusValue = usersStatus[item.id];    
+    let lastSeenDate, lastSeenTime;
+    if(statusValue !== 'online'){
+      lastSeenDate = new Date(statusValue).toLocaleDateString("en-US");
+      lastSeenTime = new Date(statusValue).toLocaleTimeString("en-US");
+    }
 
     return (
       <TouchableOpacity key={item.id} style={styles.userRow} onPress={() => onUser(item)}>
@@ -176,7 +169,7 @@ export default function Home({ navigation }) {
           {
             statusValue !== 'online' ?
               <View style={styles.txtBottomRow}>
-                <Text style={styles.itemTxt}>Last seen at {statusValue}</Text>
+                <Text style={styles.itemTxt}>Last seen at {`${lastSeenTime}, ${lastSeenDate}`}</Text>
               </View>
               :
               null
@@ -447,7 +440,7 @@ const styles = StyleSheet.create({
     top: normalize(60),
     width: normalize(15),
     height: normalize(15),
-    borderRadius: normalize(10),
+    borderRadius: normalize(10),    
   },
 
   txtPart: {
