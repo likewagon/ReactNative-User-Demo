@@ -3,23 +3,21 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>967043145503-r394ae40m43ae0apfsgqmc1q4g9h901q.apps.googleusercontent.com</string>
+	<string>802547165447-ikdeql60a4sjrppp8a98r8orfv745nf5.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.967043145503-r394ae40m43ae0apfsgqmc1q4g9h901q</string>
-	<key>ANDROID_CLIENT_ID</key>
-	<string>967043145503-kqm8lpmk8e1oqjgk05dorgjit5natj4a.apps.googleusercontent.com</string>
+	<string>com.googleusercontent.apps.802547165447-ikdeql60a4sjrppp8a98r8orfv745nf5</string>
 	<key>API_KEY</key>
-	<string>AIzaSyDSb2INw19Wcvza9ZCdA6VZZXB0yV48VMs</string>
+	<string>AIzaSyBaAuuNeubpEGLD1kJJeoVC3zA34BlVt-U</string>
 	<key>GCM_SENDER_ID</key>
-	<string>967043145503</string>
+	<string>802547165447</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
 	<string>com.faisal.userdemo</string>
 	<key>PROJECT_ID</key>
-	<string>userdemo-d04df</string>
+	<string>minproj-c657c</string>
 	<key>STORAGE_BUCKET</key>
-	<string>userdemo-d04df.appspot.com</string>
+	<string>minproj-c657c.appspot.com</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -31,6 +29,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:967043145503:ios:a4bb7989f79e6b80ef9a2a</string>
+	<string>1:802547165447:ios:1867a97c960a15c6367da2</string>
 </dict>
 </plist>

@@ -196,7 +196,7 @@ export default function Detail({ navigation }) {
           <Text style={styles.titleTxt}>Details</Text>
         </View>
         <View style={styles.sideContainer}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={() => {Constants.user.profileStep < 5 ? navigation.navigate('Signup') : navigation.navigate('Main')}}>
             <Text style={styles.sideTxt}>Cancel</Text>
           </TouchableOpacity>
         </View>

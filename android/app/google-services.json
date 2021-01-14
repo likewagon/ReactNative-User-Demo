@@ -1,20 +1,20 @@
 {
   "project_info": {
-    "project_number": "967043145503",
-    "project_id": "userdemo-d04df",
-    "storage_bucket": "userdemo-d04df.appspot.com"
+    "project_number": "802547165447",
+    "project_id": "minproj-c657c",
+    "storage_bucket": "minproj-c657c.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:967043145503:android:f9d022260126ce84ef9a2a",
+        "mobilesdk_app_id": "1:802547165447:android:605e8c22bea4e723367da2",
         "android_client_info": {
           "package_name": "com.faisal.userdemo"
         }
       },
       "oauth_client": [
         {
-          "client_id": "967043145503-kqm8lpmk8e1oqjgk05dorgjit5natj4a.apps.googleusercontent.com",
+          "client_id": "802547165447-sv2en30fmutna2o9omqijrlim0tv56be.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.faisal.userdemo",
@@ -22,24 +22,24 @@
           }
         },
         {
-          "client_id": "967043145503-994041s4p5h067epsdebuu3mjok0env6.apps.googleusercontent.com",
+          "client_id": "802547165447-4iv6refm0qcukuqj54c9kts4b2bkalog.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyDyikUUcwaFTerVw6A0od3l1rrG2T_fh5o"
+          "current_key": "AIzaSyD-TXQ_IvNRnOpfmh_Bpnk213h6D4suPvQ"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "967043145503-994041s4p5h067epsdebuu3mjok0env6.apps.googleusercontent.com",
+              "client_id": "802547165447-4iv6refm0qcukuqj54c9kts4b2bkalog.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "967043145503-r394ae40m43ae0apfsgqmc1q4g9h901q.apps.googleusercontent.com",
+              "client_id": "802547165447-ikdeql60a4sjrppp8a98r8orfv745nf5.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.faisal.userdemo"

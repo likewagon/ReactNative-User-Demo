@@ -42,7 +42,7 @@ export default function Home({ navigation }) {
   const [toggleProfileModal, setToggleProfileModal] = useState(false);
   const [toggleChildModal, setToggleChildModal] = useState(false);
 
-  const [users, setUsers] = useState(Constants.users.filter(each => each.id != Constants.user.id));
+  const [users, setUsers] = useState(Constants.users.filter(each => each.name && each.id != Constants.user.id));
   const [usersStatus, setUsersStatus] = useState([]);
   const [user, setUser] = useState(); //for popup user
   const [childs, setChilds] = useState([]);
@@ -68,7 +68,7 @@ export default function Home({ navigation }) {
       await getData('childs')
         .then(res => {
           Constants.childs = res;
-          var childs = Constants.childs.filter(each => each.pid == Constants.user.id);
+          var childs = Constants.childs.filter(each => each.name && each.pid == Constants.user.id);
           setChilds(childs);
         })
         .catch(err => { console.log('loading childs error', err) });
@@ -146,7 +146,7 @@ export default function Home({ navigation }) {
     navigation.navigate('Register', { screen: 'Detail' });
   }
 
-  function renderUser(item) {
+  function renderUser(item) {        
     let statusValue = usersStatus[item.id];    
     let lastSeenDate, lastSeenTime;
     if(statusValue !== 'online'){
