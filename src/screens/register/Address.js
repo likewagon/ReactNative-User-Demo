@@ -255,7 +255,7 @@ export default function Address({ navigation }) {
           <DropDownPicker
             items={countries}
             defaultValue={addressValues.country ? addressValues.country : null}
-            placeholder='Please enter country'
+            placeholder='Please enter country  *'
             placeholderStyle={{
               fontSize: RFPercentage(2.4),
               color: Colors.grey
